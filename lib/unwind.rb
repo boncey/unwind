@@ -31,8 +31,8 @@ module Unwind
 
       # Add retry/timeout options (not very clean code but it's only for me)
       conn = Faraday.new do |faraday|
-        faraday.request :retry,   2
-        #faraday.response :logger
+        faraday.request :retry,   3
+        faraday.response :logger
         faraday.adapter  Faraday.default_adapter
       end
       response = conn.get do |req|
