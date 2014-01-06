@@ -28,7 +28,11 @@ module Unwind
       current_url ||= self.original_url
       #adding this header because we really only care about resolving the url
       headers = (options || {}).merge({"accept-encoding" => "none"})
-      response = Faraday.get(current_url, {}, headers)
+      if block_given?
+        response = yield(current_url, headers)
+      else
+        response = Faraday.get(current_url, {}, headers)
+      end
 
       if is_response_redirect?(response)
         handle_redirect(redirect_url(response), current_url, response, headers)
