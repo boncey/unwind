@@ -11,6 +11,11 @@ module Unwind
 
     attr_reader :final_url,  :original_url, :redirect_limit, :response, :redirects
 
+    class << self
+      attr_accessor :skip_meta_redirects
+      RedirectFollower.skip_meta_redirects = false
+    end
+
     def initialize(original_url, limit=5)
      @original_url, @redirect_limit = original_url, limit
      @redirects = []
@@ -36,7 +41,7 @@ module Unwind
 
       if is_response_redirect?(response)
         handle_redirect(redirect_url(response), current_url, response, headers)
-      elsif meta_uri = meta_refresh?(current_url, response)
+      elsif !RedirectFollower.skip_meta_redirects && (meta_uri = meta_refresh?(current_url, response))
         handle_redirect(meta_uri, current_url, response, headers)
       else
         handle_final_response(current_url, response)
