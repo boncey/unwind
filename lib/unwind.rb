@@ -159,7 +159,7 @@ module Unwind
         value = value.gsub(/httponly[\,\;]*/i, '')
         value.split(/[;,]\s/).each do |cookie|
           array = cookie.split('=')
-          self[array[0].strip.to_sym] = array[1]
+          self[array[0].strip.to_sym] = array[1] if array.size == 2
         end
       else
         raise "add_cookies only takes a Hash or a String"
