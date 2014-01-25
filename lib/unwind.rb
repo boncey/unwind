@@ -28,22 +28,12 @@ module Unwind
       current_url ||= self.original_url
       #adding this header because we really only care about resolving the url
       headers = (options || {}).merge({"accept-encoding" => "none"})
-
-      # Add retry/timeout options (not very clean code but it's only for me)
-      conn = Faraday.new do |faraday|
-        faraday.request :retry,   3
-        #faraday.response :logger
-        faraday.adapter  Faraday.default_adapter
-      end
-      response = conn.get do |req|
-        req.options[:timeout] = 5
-        req.options[:open_timeout] = 3
-        req.headers = headers
-        req.url current_url
-      end
+      response = Faraday.get(current_url, {}, headers)
 
       if is_response_redirect?(response)
         handle_redirect(redirect_url(response), current_url, response, headers)
+      elsif meta_uri = meta_refresh?(current_url, response)
+        handle_redirect(meta_uri, current_url, response, headers)
       else
         handle_final_response(current_url, response)
       end
@@ -76,9 +66,7 @@ module Unwind
       if response.status == 200 && canonical = canonical_link?(response)
         @redirects << current_url
         if Addressable::URI.parse(canonical).relative?
-          current_uri = Addressable::URI.parse(current_url)
-          # Is there a cleaner way of doing this?
-          @final_url = "#{current_uri.scheme}://#{current_uri.host}#{canonical}"
+          @final_url = make_url_absolute(current_url, Addressable::URI.parse(canonical)).to_s
         else
           @final_url = canonical
         end
@@ -104,11 +92,13 @@ module Unwind
       end
     end
     
-    # Don't want this feature so don't call it anymore
-    def meta_refresh?(response)
+    def meta_refresh?(current_url, response)
       if response.status == 200
         body_match = response.body.match(/<meta http-equiv=\"refresh\" content=\"0; URL=(.*?)\"\s*\/*>/i)
-        Addressable::URI.parse(body_match[1]) if body_match
+        if body_match
+          uri = Addressable::URI.parse(body_match[1])
+          make_url_absolute(current_url, uri)
+        end
       end
     end
 
@@ -123,6 +113,23 @@ module Unwind
       else 
         #todo: should we delete the cookie at this point if it exists?
         headers
+      end
+    end
+
+    def make_url_absolute(current_url, relative_url)
+      current_uri = Addressable::URI.parse(current_url)
+      if (relative_url.relative?)
+        url = Addressable::URI.new(
+          :scheme => current_uri.scheme,
+          :user => current_uri.user,
+          :password => current_uri.password,
+          :host => current_uri.host,
+          :port => current_uri.port,
+          :path => relative_url.path,
+          :query => relative_url.query,
+          :fragment => relative_url.fragment)
+      else
+        relative_url
       end
     end
 
