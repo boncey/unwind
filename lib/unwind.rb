@@ -6,6 +6,7 @@ module Unwind
 
   class TooManyRedirects < StandardError; end
   class MissingRedirectLocation < StandardError; end
+  class InvalidUri < StandardError; end
 
   class RedirectFollower
 
@@ -36,7 +37,11 @@ module Unwind
       if block_given?
         response = yield(current_url, headers)
       else
-        response = Faraday.get(current_url, {}, headers)
+        if (current_url.scheme == 'http' || current_url.scheme == 'https')
+          response = Faraday.get(current_url, {}, headers)
+        else
+          raise InvalidUri.new(current_url)
+        end
       end
 
       if is_response_redirect?(response)
