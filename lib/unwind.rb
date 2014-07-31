@@ -35,9 +35,9 @@ module Unwind
       #adding this header because we really only care about resolving the url
       headers = (options || {}).merge({"accept-encoding" => "none"})
       if block_given?
-        response = yield(current_url, headers)
+        response = yield(URI.encode(current_url).to_s, headers)
       else
-        if (current_url.scheme == 'http' || current_url.scheme == 'https')
+        if (current_url.is_a?(Addressable::URI) && (current_url.scheme == 'http' || current_url.scheme == 'https'))
           response = Faraday.get(current_url, {}, headers)
         else
           raise InvalidUri.new(current_url)
