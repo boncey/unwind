@@ -42,7 +42,9 @@ module Unwind
       response = Net::HTTP.start(
         url.host,
         url.port,
-        :use_ssl => url.scheme == 'https'
+        :use_ssl => url.scheme == 'https',
+        :open_timeout => 5,
+        :read_timeout => 3
       ) do |http|
         http.request(request)
       end
