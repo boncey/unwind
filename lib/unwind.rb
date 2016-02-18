@@ -28,9 +28,8 @@ module Unwind
       #adding this header because we really only care about resolving the url
       headers = (options || {}).merge({"accept-encoding" => "none"})
 
-      if (current_url.is_a?(Addressable::URI) && (current_url.scheme == 'http' || current_url.scheme == 'https'))
-        url = URI.parse(current_url)
-
+      url = URI.parse(current_url)
+      if (url.scheme == 'http' || url.scheme == 'https')
         request = Net::HTTP::Get.new(url)
       else
         raise InvalidUri.new(current_url)
