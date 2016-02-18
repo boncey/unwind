@@ -6,6 +6,7 @@ module Unwind
 
   class TooManyRedirects < StandardError; end
   class MissingRedirectLocation < StandardError; end
+  class InvalidUri < StandardError; end
 
   class RedirectFollower
 
@@ -27,9 +28,13 @@ module Unwind
       #adding this header because we really only care about resolving the url
       headers = (options || {}).merge({"accept-encoding" => "none"})
 
-      url = URI.parse(current_url)
+      if (current_url.is_a?(Addressable::URI) && (current_url.scheme == 'http' || current_url.scheme == 'https'))
+        url = URI.parse(current_url)
 
-      request = Net::HTTP::Get.new(url)
+        request = Net::HTTP::Get.new(url)
+      else
+        raise InvalidUri.new(current_url)
+      end
 
       headers.each do |header, value|
         request.add_field(header, value)
