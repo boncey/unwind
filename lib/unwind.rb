@@ -36,7 +36,7 @@ module Unwind
       end
 
       headers.each do |header, value|
-        request.add_field(header, value)
+        request[header] = value
       end
 
       response = Net::HTTP.start(
